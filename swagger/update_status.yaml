@@ -1,0 +1,27 @@
+tags:
+  - General
+summary: Service Information
+description: Provides information about the Fakturering-Service and available endpoints.
+responses:
+  200:
+    description: Successfully retrieved service information
+    schema:
+      type: object
+      properties:
+        service:
+          type: string
+          example: "Fakturering-Service"
+        available_endpoints:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+                example: "/create_invoice"
+              method:
+                type: string
+                example: "POST"
+              description:
+                type: string
+                example: "Opret ny faktura"

@@ -3,10 +3,9 @@ import os
 from datetime import datetime
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from dotenv import load_dotenv
-from flasgger import swag_from
-from swagger.config import init_swagger
-from uuid import uuid4  # Import for UUID generation
-from enum import Enum  # Import for Enum
+from flasgger import Swagger, swag_from
+from uuid import uuid4
+from enum import Enum
 
 # Load environment variables
 load_dotenv()
@@ -18,8 +17,13 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 PORT = int(os.getenv('PORT', 5001))
 jwt = JWTManager(app)
 
-# Initialize Swagger
-init_swagger(app)
+# Swagger Configuration
+app.config['SWAGGER'] = {
+    'title': 'Fakturering Microservice API',
+    'uiversion': 3,  # Use Swagger UI v3
+    'openapi': '3.0.0'
+}
+swagger = Swagger(app)
 
 # Enum for Faktura Status
 class FakturaStatus(str, Enum):
@@ -31,6 +35,7 @@ class FakturaStatus(str, Enum):
 invoices = []
 
 @app.route('/')
+@swag_from('swagger/home.yaml')
 def home():
     return jsonify({
         "service": "Fakturering-Service",

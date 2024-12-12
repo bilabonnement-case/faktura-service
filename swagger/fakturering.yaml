@@ -1,0 +1,221 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: Fakturering Microservice API
+  description: API til håndtering af fakturaer for bilabonnement.
+host: localhost:5001
+basePath: /
+schemes:
+  - http
+tags:
+  - name: Faktura
+    description: Endpoints til håndtering af fakturaer
+
+paths:
+  /create_invoice:
+    post:
+      tags:
+        - Faktura
+      summary: Opret ny faktura
+      description: Opret en ny faktura for et abonnement. Kræver JWT authentication.
+      security:
+        - Bearer: []
+      parameters:
+        - in: body
+          name: body
+          description: Fakturaoplysninger
+          required: true
+          schema:
+            type: object
+            required:
+              - AbonnementsID
+              - KundeID
+              - Beløb
+              - Betalingsdato
+            properties:
+              AbonnementsID:
+                type: string
+                format: uuid
+                example: "123e4567-e89b-12d3-a456-426614174000"
+              KundeID:
+                type: string
+                format: uuid
+                example: "123e4567-e89b-12d3-a456-426614174001"
+              Beløb:
+                type: number
+                format: float
+                example: 1234.56
+              Betalingsdato:
+                type: string
+                format: date
+                example: "2024-12-10"
+      responses:
+        201:
+          description: Faktura oprettet
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Faktura oprettet"
+              invoice:
+                type: object
+                properties:
+                  FakturaID:
+                    type: string
+                    format: uuid
+                    example: "123e4567-e89b-12d3-a456-426614174002"
+                  AbonnementsID:
+                    type: string
+                    format: uuid
+                  KundeID:
+                    type: string
+                    format: uuid
+                  Beløb:
+                    type: number
+                  Betalingsdato:
+                    type: string
+                    format: date
+                  Status:
+                    type: string
+                    example: "Ikke betalt"
+        400:
+          description: Fejl i inputdata
+        401:
+          description: Uautoriseret adgang
+        500:
+          description: Serverfejl
+
+  /get_invoice/{faktura_id}:
+    get:
+      tags:
+        - Faktura
+      summary: Hent faktura
+      description: Hent en specifik faktura baseret på FakturaID. Kræver JWT authentication.
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: faktura_id
+          type: string
+          format: uuid
+          required: true
+          description: UUID for den ønskede faktura
+      responses:
+        200:
+          description: Faktura fundet
+          schema:
+            type: object
+            properties:
+              FakturaID:
+                type: string
+                format: uuid
+              AbonnementsID:
+                type: string
+                format: uuid
+              KundeID:
+                type: string
+                format: uuid
+              Beløb:
+                type: number
+              Betalingsdato:
+                type: string
+                format: date
+              Status:
+                type: string
+                example: "Ikke betalt"
+        404:
+          description: Faktura ikke fundet
+        401:
+          description: Uautoriseret adgang
+        500:
+          description: Serverfejl
+
+  /update_status/{faktura_id}:
+    put:
+      tags:
+        - Faktura
+      summary: Opdater fakturastatus
+      description: Opdater status for en eksisterende faktura. Kræver JWT authentication.
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: faktura_id
+          type: string
+          format: uuid
+          required: true
+          description: UUID for den faktura, der skal opdateres
+        - in: body
+          name: body
+          description: Ny status for faktura
+          required: true
+          schema:
+            type: object
+            required:
+              - Status
+            properties:
+              Status:
+                type: string
+                enum:
+                  - "Ikke betalt"
+                  - "Betalt"
+                  - "Forfalden"
+                example: "Betalt"
+      responses:
+        200:
+          description: Status opdateret
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Status opdateret"
+              invoice:
+                type: object
+        404:
+          description: Faktura ikke fundet
+        400:
+          description: Ugyldig status
+        401:
+          description: Uautoriseret adgang
+        500:
+          description: Serverfejl
+
+  /report:
+    get:
+      tags:
+        - Faktura
+      summary: Få samlet rapportering
+      description: Generer en rapport over fakturaer. Kræver JWT authentication.
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Rapport genereret
+          schema:
+            type: object
+            properties:
+              TotalBetalt:
+                type: number
+                format: float
+                example: 10000.0
+              UbetalteFakturaer:
+                type: integer
+                example: 5
+              ForfaldneFakturaer:
+                type: integer
+                example: 2
+              TotalFakturaer:
+                type: integer
+                example: 20
+        401:
+          description: Uautoriseret adgang
+        500:
+          description: Serverfejl
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
