@@ -1,10 +1,10 @@
 tags:
   - General
-summary: Service Information
-description: Provides information about the Fakturering-Service and available endpoints.
+summary: Overview of the Fakturering-Service
+description: Provides an overview of the Fakturering-Service, including available endpoints.
 responses:
   200:
-    description: Successfully retrieved service information
+    description: Successfully retrieved service overview
     schema:
       type: object
       properties:

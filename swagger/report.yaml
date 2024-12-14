@@ -1,27 +1,31 @@
 tags:
-  - General
-summary: Service Information
-description: Provides information about the Fakturering-Service and available endpoints.
+  - Faktura
+summary: Retrieve invoice report
+description: Provides a summary report of all invoices, including total paid amount, unpaid invoices, overdue invoices, and total invoices.
 responses:
   200:
-    description: Successfully retrieved service information
+    description: Successfully retrieved invoice report
     schema:
       type: object
       properties:
-        service:
+        TotalBetalt:
+          type: number
+          format: float
+          example: 15000.75
+        UbetalteFakturaer:
+          type: integer
+          example: 10
+        ForfaldneFakturaer:
+          type: integer
+          example: 2
+        TotalFakturaer:
+          type: integer
+          example: 50
+  500:
+    description: Internal server error
+    schema:
+      type: object
+      properties:
+        error:
           type: string
-          example: "Fakturering-Service"
-        available_endpoints:
-          type: array
-          items:
-            type: object
-            properties:
-              path:
-                type: string
-                example: "/create_invoice"
-              method:
-                type: string
-                example: "POST"
-              description:
-                type: string
-                example: "Opret ny faktura"
+          example: "An error occurred"

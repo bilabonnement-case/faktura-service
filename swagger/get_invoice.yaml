@@ -1,27 +1,56 @@
 tags:
-  - General
-summary: Service Information
-description: Provides information about the Fakturering-Service and available endpoints.
+  - Faktura
+summary: Get an invoice by ID
+description: Retrieve the details of an invoice based on its unique ID.
+parameters:
+  - name: faktura_id
+    in: path
+    description: The unique ID of the invoice to retrieve
+    required: true
+    type: integer
 responses:
   200:
-    description: Successfully retrieved service information
+    description: Successfully retrieved the invoice
     schema:
       type: object
       properties:
-        service:
+        id:
+          type: integer
+          example: 1
+        abonnements_id:
+          type: integer
+          example: 123
+        kunde_id:
+          type: integer
+          example: 456
+        beloeb:
+          type: number
+          format: float
+          example: 1200.50
+        betalingsdato:
           type: string
-          example: "Fakturering-Service"
-        available_endpoints:
-          type: array
-          items:
-            type: object
-            properties:
-              path:
-                type: string
-                example: "/create_invoice"
-              method:
-                type: string
-                example: "POST"
-              description:
-                type: string
-                example: "Opret ny faktura"
+          format: datetime
+          example: "2024-12-15"
+        status:
+          type: string
+          example: "Ikke betalt"
+        oprettet_tidspunkt:
+          type: string
+          format: datetime
+          example: "2024-12-01 12:00:00"
+  404:
+    description: Invoice not found
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Faktura ikke fundet"
+  500:
+    description: Internal server error
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "An error occurred"

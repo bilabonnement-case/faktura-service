@@ -25,16 +25,19 @@ DATABASE = "database.db"
 def init_db():
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
+
+        # Drop tabellen, hvis den allerede eksisterer
+        ##cursor.execute("DROP TABLE IF EXISTS invoices")
         # Opret en tabel til fakturaer, hvis den ikke allerede findes
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS invoices (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            abonnements_id TEXT NOT NULL,
-            kunde_id TEXT NOT NULL,
-            beloeb REAL NOT NULL,
-            betalingsdato TEXT NOT NULL,
-            status TEXT NOT NULL,
-            oprettet_tidspunkt TEXT NOT NULL
+            id INTEGER PRIMARY KEY AUTOINCREMENT, -- Unikt ID for fakturaen
+            abonnements_id INTEGER NOT NULL,      -- ID for abonnement
+            kunde_id INTEGER NOT NULL,            -- ID for kunde
+            beloeb REAL NOT NULL,                 -- Fakturabeløb
+            betalingsdato DATETIME NOT NULL,      -- Betalingsdato
+            status TEXT NOT NULL,                 -- Fakturastatus
+            oprettet_tidspunkt DATETIME NOT NULL  -- Tidspunkt for oprettelse
         )
         """)
         conn.commit()
@@ -72,25 +75,36 @@ def get_db_connection():
 @app.route('/create_invoice', methods=['POST'])
 @swag_from('swagger/create_invoice.yaml')
 def create_invoice():
-    data = request.get_json()
-    abonnements_id = data.get("AbonnementsID")
-    kunde_id = data.get("KundeID")
-    beloeb = data.get("Beløb")
-    betalingsdato = data.get("Betalingsdato")
-    status = FakturaStatus.IKKE_BETALT
-    oprettet_tidspunkt = datetime.now().isoformat()
+    try:
+        # Hent JSON-data fra request
+        data = request.get_json()
 
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-        INSERT INTO invoices (abonnements_id, kunde_id, beloeb, betalingsdato, status, oprettet_tidspunkt)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, (abonnements_id, kunde_id, beloeb, betalingsdato, status, oprettet_tidspunkt))
-        conn.commit()
+        # Brug små bogstaver for JSON-nøgler (som modtages i POST)
+        abonnements_id = data.get("abonnements_id")
+        kunde_id = data.get("kunde_id")
+        beloeb = data.get("beloeb")
+        betalingsdato = data.get("betalingsdato")
+        # Standardstatus og oprettelsestidspunkt
+        status = FakturaStatus.IKKE_BETALT
+        oprettet_tidspunkt = datetime.now().isoformat()
 
-        faktura_id = cursor.lastrowid
+        # Indsæt data i databasen
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            INSERT INTO invoices (abonnements_id, kunde_id, beloeb, betalingsdato, status, oprettet_tidspunkt)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """, (abonnements_id, kunde_id, beloeb, betalingsdato, status, oprettet_tidspunkt))
+            conn.commit()
 
-    return jsonify({"message": "Faktura oprettet", "invoice_id": faktura_id}), 201
+            faktura_id = cursor.lastrowid
+
+        return jsonify({"message": "Faktura oprettet", "invoice_id": faktura_id}), 201
+
+    except Exception as e:
+        # Log fejl og returner generisk fejl
+        print(f"Error: {e}")
+        return jsonify({"error": "An error occurred"}), 500
 
 
 @app.route('/get_invoice/<int:faktura_id>', methods=['GET'])

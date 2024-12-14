@@ -1,27 +1,54 @@
 tags:
-  - General
-summary: Service Information
-description: Provides information about the Fakturering-Service and available endpoints.
-responses:
-  200:
-    description: Successfully retrieved service information
+  - Faktura
+summary: Create a new invoice
+description: Creates a new invoice for a subscription and customer.
+parameters:
+  - in: body
+    name: body
+    description: The invoice details
+    required: true
     schema:
       type: object
       properties:
-        service:
+        abonnements_id:
+          type: integer
+          example: 123
+        kunde_id:
+          type: integer
+          example: 456
+        beloeb:
+          type: number
+          format: float
+          example: 1200.50
+        betalingsdato:
           type: string
-          example: "Fakturering-Service"
-        available_endpoints:
-          type: array
-          items:
-            type: object
-            properties:
-              path:
-                type: string
-                example: "/create_invoice"
-              method:
-                type: string
-                example: "POST"
-              description:
-                type: string
-                example: "Opret ny faktura"
+          format: datetime
+          example: "2024-12-15"
+responses:
+  201:
+    description: Invoice successfully created
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Faktura oprettet"
+        invoice_id:
+          type: integer
+          example: 1
+  400:
+    description: Invalid input
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Missing required fields"
+  500:
+    description: Internal server error
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "An error occurred"

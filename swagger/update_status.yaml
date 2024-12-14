@@ -1,27 +1,66 @@
 tags:
-  - General
-summary: Service Information
-description: Provides information about the Fakturering-Service and available endpoints.
-responses:
-  200:
-    description: Successfully retrieved service information
+  - Faktura
+summary: Update invoice status
+description: Update the status of an invoice based on its unique ID.
+parameters:
+  - name: faktura_id
+    in: path
+    description: The unique ID of the invoice to update
+    required: true
+    type: integer
+  - in: body
+    name: body
+    description: The new status for the invoice
+    required: true
     schema:
       type: object
       properties:
-        service:
+        Status:
           type: string
-          example: "Fakturering-Service"
-        available_endpoints:
-          type: array
-          items:
-            type: object
-            properties:
-              path:
-                type: string
-                example: "/create_invoice"
-              method:
-                type: string
-                example: "POST"
-              description:
-                type: string
-                example: "Opret ny faktura"
+          enum:
+            - Ikke betalt
+            - Betalt
+            - Forfalden
+          example: "Betalt"
+responses:
+  200:
+    description: Successfully updated invoice status
+    schema:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Status opdateret"
+        invoice:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            status:
+              type: string
+              example: "Betalt"
+  400:
+    description: Invalid input or status
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Ugyldig status"
+  404:
+    description: Invoice not found
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Faktura ikke fundet"
+  500:
+    description: Internal server error
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "An error occurred"
