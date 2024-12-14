@@ -1,38 +1,53 @@
 from flask import Flask, jsonify, request
 import os
 from datetime import datetime
-from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from dotenv import load_dotenv
 from flasgger import Swagger, swag_from
-from uuid import uuid4
-from enum import Enum
+import sqlite3
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
-# JWT Configuration
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-PORT = int(os.getenv('PORT', 5001))
-jwt = JWTManager(app)
-
 # Swagger Configuration
 app.config['SWAGGER'] = {
     'title': 'Fakturering Microservice API',
-    'uiversion': 3,  # Use Swagger UI v3
+    'uiversion': 3,
     'openapi': '3.0.0'
 }
 swagger = Swagger(app)
 
+# Database Opsætning
+DATABASE = "database.db"
+
+
+def init_db():
+    with sqlite3.connect(DATABASE) as conn:
+        cursor = conn.cursor()
+        # Opret en tabel til fakturaer, hvis den ikke allerede findes
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS invoices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            abonnements_id TEXT NOT NULL,
+            kunde_id TEXT NOT NULL,
+            beloeb REAL NOT NULL,
+            betalingsdato TEXT NOT NULL,
+            status TEXT NOT NULL,
+            oprettet_tidspunkt TEXT NOT NULL
+        )
+        """)
+        conn.commit()
+
+
+init_db()
+
 # Enum for Faktura Status
-class FakturaStatus(str, Enum):
+class FakturaStatus:
     IKKE_BETALT = "Ikke betalt"
     BETALT = "Betalt"
     FORFALDEN = "Forfalden"
 
-# Simuleret database
-invoices = []
 
 @app.route('/')
 @swag_from('swagger/home.yaml')
@@ -41,78 +56,91 @@ def home():
         "service": "Fakturering-Service",
         "available_endpoints": [
             {"path": "/create_invoice", "method": "POST", "description": "Opret ny faktura"},
-            {"path": "/get_invoice/<faktura_id>", "method": "GET", "description": "Hent faktura baseret på FakturaID"},
-            {"path": "/update_status/<faktura_id>", "method": "PUT", "description": "Opdater fakturastatus"},
+            {"path": "/get_invoice/<int:faktura_id>", "method": "GET", "description": "Hent faktura baseret på FakturaID"},
+            {"path": "/update_status/<int:faktura_id>", "method": "PUT", "description": "Opdater fakturastatus"},
             {"path": "/report", "method": "GET", "description": "Få samlet fakturarapportering"},
         ]
     })
 
-# Endpoint for oprettelse af faktura
+
+def get_db_connection():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
 @app.route('/create_invoice', methods=['POST'])
-@jwt_required()
 @swag_from('swagger/create_invoice.yaml')
 def create_invoice():
-    try:
-        data = request.get_json()
-        invoice = {
-            "FakturaID": str(uuid4()),
-            "AbonnementsID": data.get("AbonnementsID"),
-            "KundeID": data.get("KundeID"),
-            "Beløb": data.get("Beløb"),
-            "Betalingsdato": data.get("Betalingsdato"),
-            "Status": FakturaStatus.IKKE_BETALT.value,
-            "OprettetAf": get_jwt_identity(),
-            "OprettetTidspunkt": datetime.now().isoformat()
-        }
-        invoices.append(invoice)
-        return jsonify({"message": "Faktura oprettet", "invoice": invoice}), 201
-    except KeyError as e:
-        return jsonify({"error": f"Missing required field: {str(e)}"}), 400
+    data = request.get_json()
+    abonnements_id = data.get("AbonnementsID")
+    kunde_id = data.get("KundeID")
+    beloeb = data.get("Beløb")
+    betalingsdato = data.get("Betalingsdato")
+    status = FakturaStatus.IKKE_BETALT
+    oprettet_tidspunkt = datetime.now().isoformat()
 
-# Endpoint for hentning af faktura
-@app.route('/get_invoice/<faktura_id>', methods=['GET'])
-@jwt_required()
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT INTO invoices (abonnements_id, kunde_id, beloeb, betalingsdato, status, oprettet_tidspunkt)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """, (abonnements_id, kunde_id, beloeb, betalingsdato, status, oprettet_tidspunkt))
+        conn.commit()
+
+        faktura_id = cursor.lastrowid
+
+    return jsonify({"message": "Faktura oprettet", "invoice_id": faktura_id}), 201
+
+
+@app.route('/get_invoice/<int:faktura_id>', methods=['GET'])
 @swag_from('swagger/get_invoice.yaml')
 def get_invoice(faktura_id):
-    invoice = next((inv for inv in invoices if inv["FakturaID"] == faktura_id), None)
-    if invoice:
-        return jsonify(invoice), 200
-    return jsonify({"error": "Faktura ikke fundet"}), 404
+    with get_db_connection() as conn:
+        invoice = conn.execute("SELECT * FROM invoices WHERE id = ?", (faktura_id,)).fetchone()
 
-# Endpoint for opdatering af fakturastatus
-@app.route('/update_status/<faktura_id>', methods=['PUT'])
-@jwt_required()
+    if invoice is None:
+        return jsonify({"error": "Faktura ikke fundet"}), 404
+
+    return jsonify(dict(invoice)), 200
+
+
+@app.route('/update_status/<int:faktura_id>', methods=['PUT'])
 @swag_from('swagger/update_status.yaml')
 def update_status(faktura_id):
-    try:
-        data = request.get_json()
-        status = data.get("Status")
-        if status not in FakturaStatus._value2member_map_:
-            return jsonify({"error": "Ugyldig status"}), 400
-        invoice = next((inv for inv in invoices if inv["FakturaID"] == faktura_id), None)
-        if invoice:
-            invoice["Status"] = status
-            return jsonify({"message": "Status opdateret", "invoice": invoice}), 200
-        return jsonify({"error": "Faktura ikke fundet"}), 404
-    except KeyError as e:
-        return jsonify({"error": f"Missing required field: {str(e)}"}), 400
+    data = request.get_json()
+    status = data.get("Status")
 
-# Endpoint for rapportering
+    if status not in [FakturaStatus.IKKE_BETALT, FakturaStatus.BETALT, FakturaStatus.FORFALDEN]:
+        return jsonify({"error": "Ugyldig status"}), 400
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        result = cursor.execute("UPDATE invoices SET status = ? WHERE id = ?", (status, faktura_id))
+        conn.commit()
+
+        if result.rowcount == 0:
+            return jsonify({"error": "Faktura ikke fundet"}), 404
+
+    return jsonify({"message": "Status opdateret"}), 200
+
+
 @app.route('/report', methods=['GET'])
-@jwt_required()
 @swag_from('swagger/report.yaml')
 def report():
-    total_beloeb = sum([inv["Beløb"] for inv in invoices if inv["Status"] == FakturaStatus.BETALT.value])
-    unpaid_invoices = len([inv for inv in invoices if inv["Status"] == FakturaStatus.IKKE_BETALT.value])
-    overdue_invoices = len([inv for inv in invoices if inv["Status"] == FakturaStatus.FORFALDEN.value])
+    with get_db_connection() as conn:
+        total_beloeb = conn.execute("SELECT SUM(beloeb) FROM invoices WHERE status = ?", (FakturaStatus.BETALT,)).fetchone()[0] or 0
+        unpaid_invoices = conn.execute("SELECT COUNT(*) FROM invoices WHERE status = ?", (FakturaStatus.IKKE_BETALT,)).fetchone()[0]
+        overdue_invoices = conn.execute("SELECT COUNT(*) FROM invoices WHERE status = ?", (FakturaStatus.FORFALDEN,)).fetchone()[0]
 
     report_data = {
         "TotalBetalt": total_beloeb,
         "UbetalteFakturaer": unpaid_invoices,
-        "ForfaldneFakturaer": overdue_invoices,
-        "TotalFakturaer": len(invoices)
+        "ForfaldneFakturaer": overdue_invoices
     }
+
     return jsonify(report_data)
 
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=PORT)
+    app.run(debug=True, host='0.0.0.0', port=5001)
