@@ -26,19 +26,19 @@ Install the required dependencies using:
 ### Environment Variables
 
 Create a .env file in the root directory and specify the following:
-```FLASK_ENV=development```
-```DATABASE=database.db```
+```FLASK_DEBUG=1```
+```DATABASE=faktura-database.db```
 
 ## Getting Started
 
 1. Initialize the Database
 
-The service uses SQLite to store invoice data. The database is automatically initialized when the service starts. To reinitialize, you can modify the init_db() function in app.py.
+The service uses SQLite to store invoice data. The database is automatically initialized when the service starts. To reinitialize, you can modify the init_db() function in faktura-app.py.
 
 2. Start the Service
 
 Run the Flask application:
-```python app.py```
+```python faktura-app.py```
 The service will be available at http://127.0.0.1:5001.
 
 ## API Endpoints
@@ -137,8 +137,8 @@ Generates a summary report of all invoices.
 ## Project Structure
 ```
 .
-├── app.py                # Main Flask application
-├── database.db           # SQLite database (created automatically)
+├── faktura-app.py        # Main Flask application
+├── faktura-database.db   # SQLite database (created automatically)
 ├── swagger/              # YAML files for API documentation
 │   ├── create_invoice.yaml
 │   ├── get_invoice.yaml
