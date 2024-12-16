@@ -1,6 +1,6 @@
-# Fakturering-Service
+# faktura-Service
 
-Fakturering-Service is a Flask-based microservice that handles invoice management. It includes endpoints for creating invoices, retrieving invoice details, updating invoice statuses, and generating invoice reports. The service uses SQLite for database management and provides API documentation via Swagger.
+faktura-Service is a Flask-based microservice that handles invoice management. It includes endpoints for creating invoices, retrieving invoice details, updating invoice statuses, and generating invoice reports. The service uses SQLite for database management and provides API documentation via Swagger.
 
 ## Features
 	•	Create Invoices: Add new invoices with customer and subscription details.
@@ -50,7 +50,7 @@ Provides a list of available endpoints in the service.
 #### Response Example:
 ```
 {
-  "service": "Fakturering-Service",
+  "service": "faktura-Service",
   "available_endpoints": [
     {"path": "/create_invoice", "method": "POST", "description": "Opret ny faktura"},
     {"path": "/get_invoice/<int:faktura_id>", "method": "GET", "description": "Hent faktura baseret på FakturaID"},

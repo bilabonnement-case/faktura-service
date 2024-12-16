@@ -1,7 +1,7 @@
 tags:
   - General
-summary: Overview of the Fakturering-Service
-description: Provides an overview of the Fakturering-Service, including available endpoints.
+summary: Overview of the faktura-Service
+description: Provides an overview of the faktura-Service, including available endpoints.
 responses:
   200:
     description: Successfully retrieved service overview
@@ -10,7 +10,7 @@ responses:
       properties:
         service:
           type: string
-          example: "Fakturering-Service"
+          example: "faktura-Service"
         available_endpoints:
           type: array
           items:

@@ -1,7 +1,7 @@
 swagger: "2.0"
 info:
   version: "1.0.0"
-  title: Fakturering Microservice API
+  title: faktura Microservice API
   description: API til håndtering af fakturaer for bilabonnement.
 host: localhost:5001
 basePath: /

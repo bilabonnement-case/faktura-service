@@ -12,14 +12,14 @@ app = Flask(__name__)
 
 # Swagger Configuration
 app.config['SWAGGER'] = {
-    'title': 'Fakturering Microservice API',
+    'title': 'faktura Microservice API',
     'uiversion': 3,
     'openapi': '3.0.0'
 }
 swagger = Swagger(app)
 
 # Database Opsætning
-DATABASE = "faktura-database.db"
+DATABASE = "/app/data/faktura-database.db"
 
 
 def init_db():
@@ -56,7 +56,7 @@ class FakturaStatus:
 @swag_from('swagger/home.yaml')
 def home():
     return jsonify({
-        "service": "Fakturering-Service",
+        "service": "faktura-Service",
         "available_endpoints": [
             {"path": "/create_invoice", "method": "POST", "description": "Opret ny faktura"},
             {"path": "/get_invoice/<int:faktura_id>", "method": "GET", "description": "Hent faktura baseret på FakturaID"},

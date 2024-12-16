@@ -7,7 +7,10 @@ WORKDIR /app
 # Copy files
 COPY faktura-app.py .
 COPY requirements.txt .
+COPY swagger/ ./swagger/
 
+# Create a directory for the database
+RUN mkdir -p /app/data
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
