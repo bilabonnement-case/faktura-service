@@ -47,5 +47,5 @@ jobs:
       with:
         app-name: 'faktura-service'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile }}
-        images: ${{ secrets.DOCKER_USERNAME }}/faktura-service:${{ github.sha }}
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_98931a9cdc9d4df48c74d7342a7d13fe }}
+        images: 'index.docker.io/${{ secrets.AzureAppService_ContainerUsername_6a16cdfe9bde44ef94337d79262f583f }}/birklauritzen/faktura-service:${{ github.sha }}'
